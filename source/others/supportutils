@@ -1,0 +1,590 @@
+#!/bin/sh
+#
+#
+#	Copyright (C) 2012-2013 Hisense Media Networks Holding Limited
+#
+#	2012-12-03 10:41:57
+#	Version: 0.86
+#
+#	2012-12-04 12:58:46 CST
+#	Version: 0.87
+#
+#	2013-03-05 16:29:22 CST
+#	Version: 0.89 
+#	ChangeLog: 
+#		Add gathering security log.
+#
+#	2013-07-01 14:37:27 CST
+#	Version: 0.90 
+#	ChangeLog: 
+#		Add maxprocesstime feature!
+#	
+#	2013-07-15 18:28:39 CST
+#	Version:
+#	ChangeLog:
+#		Change redirect 1>&2
+#
+#
+#	Author:
+#		Tony <liutingwei@hisense.com> <tingw.liu@gmail.com>
+#
+#
+
+
+script_version="0.90"
+script_date=" 2013-07-01 15:45:20 CST"
+configline="#==[Configure file] =====================================================================#"
+cmdline="#==[Command] ============================================================================#"
+logline="#==[Log] ================================================================================#"
+
+maxprocesstime()
+{
+	timeout=$1
+	shift
+	$@ &
+	pid=$!
+	if [ "${pid}" = "0" ];then
+		exit -1
+	fi
+	(sleep ${timeout};kill -9 ${pid} 2>/dev/null 1>&2)&  2>/dev/null
+	killerpid=$!
+	wait ${pid} 2>/dev/null 1>&2
+	kill -HUP ${killerpid} 2>/dev/null 1>&2
+}
+
+bluecolor()
+{
+	echo  -ne "\033[34m"
+}
+redcolor()
+{
+	echo -ne "\033[31m"
+}
+greencolor()
+{
+	echo -ne "\033[32m"
+}
+yellocolor()
+{
+	echo -ne "\033[33m"
+}
+cleanstyle()
+{
+	echo -ne "\033[0m"
+}
+begin_config()
+{
+	bluecolor
+	echo "" >> ${1}
+	if [ "${2}" = "config" ];then
+		echo ${configline} >> ${1}
+	elif [ "${2}" = "cmd" ];then
+		echo ${cmdline} >> ${1}
+	elif [ "${2}" = "log" ];then
+		echo ${logline} >> ${1}
+	else
+		echo "Error begin_config"
+	fi
+}
+
+openfile_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# lsof -b +M -n -l" >> ${filename}
+	cleanstyle
+	maxprocesstime 10 lsof -b +M -n -l >> ${filename}
+}
+env_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# ulimit -a " >> ${filename}
+	cleanstyle
+	maxprocesstime 2 ulimit -a >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /etc/sysctl.conf" >> ${filename}
+	cleanstyle
+	maxprocesstime 3 cat "/etc/sysctl.conf" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# sysctl -a" >> ${filename}
+	cleanstyle
+	maxprocesstime 5 sysctl -a >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# getconf -a" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 getconf -a >> ${filename} 
+
+	begin_config "${filename}" "cmd"
+	echo "# ipcs -a" >> ${filename}
+	cleanstyle
+	maxprocesstime 4 ipcs -a >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# env" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 env >> ${filename}
+}
+disk_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# fdisk -l" >> ${filename}
+	cleanstyle
+	maxprocesstime 5 fdisk -l >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# parted -l" >> ${filename}
+	cleanstyle
+	maxprocesstime 5 parted -l >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /etc/fstab" >> ${filename}
+	cleanstyle
+	maxprocesstime 3 cat "/etc/fstab" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# mount" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 mount >> ${filename}
+}
+boot_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# /bin/uname -a" >> ${filename}
+	cleanstyle
+	uname -a >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /boot/grub/menu.lst" >> ${filename}
+	cleanstyle
+	cat "/boot/grub/menu.lst" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/cmdline" >> ${filename}
+	cleanstyle
+	cat "/proc/cmdline" >> ${filename}
+	
+	begin_config "${filename}" "config"
+	echo "# /etc/inittab" >> ${filename}
+	cleanstyle
+	cat "/etc/inittab" >>  ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /etc/init.d/boot.local" >> ${filename}
+	cleanstyle
+	cat "/etc/init.d/boot.local" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /etc/init.d/before.local"  >> ${filename}
+	cleanstyle
+	cat "/etc/init.d/before.local" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /etc/init.d/after.local" >> ${filename}
+	cleanstyle
+	cat "/etc/init.d/after.local" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /var/log/boot.msg" >> ${filename}
+	cleanstyle
+	cat "/var/log/boot.msg" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# dmesg" >> ${filename}
+	cleanstyle
+	maxprocesstime 5 dmesg >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# uptime" >> ${filename}
+	cleanstyle
+	uptime >> ${filename}
+}
+process_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# TOP 10 CPU Processes" >> ${filename}
+	cleanstyle
+	maxprocesstime 4 ps aux|head -n 1 >> ${filename}
+	maxprocesstime 4 ps aux|grep -v PID|sort -n -r -k 3|head -n 10 >> ${filename}
+	
+	begin_config "${filename}" "cmd"
+	echo "# TOP 10 MEM Processes" >> ${filename}
+	cleanstyle
+	maxprocesstime 4 ps aux|head -n 1 >> ${filename}
+	maxprocesstime 4 ps aux|grep -v PID|sort -n -r -k 4|head -n 10 >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# All Processes" >> ${filename}
+	cleanstyle
+	maxprocesstime 4 ps aux >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# Open file" >> ${filename}
+	cleanstyle
+	tempfile=`mktemp`
+	maxprocesstime 2 ps -ef|grep -v "PID"|awk '{print $2}' > ${tempfile}
+	echo "PID	FileNumber" >> ${filename}
+	while read line
+	do
+		fds=`ls /proc/${line}/fd|wc -w`
+		echo "${line}	${fds}" >> ${filename}
+	done < ${tempfile}
+	if [ -f ${tempfile} ];then
+		rm -f ${tempfile}
+	fi
+}
+cron_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# chkconfig cron --list" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 chkconfig cron --list >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# /etc/init.d/cron status" >> ${filename}
+	cleanstyle
+	maxprocesstime 3 /etc/init.d/cron status >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# hitv job" >> ${filename}
+	cleanstyle
+	maxprocesstime 3 crontab -u hitv -l >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /etc/crontab" >> ${filename}
+	cleanstyle
+	cat "/etc/crontab" >> ${filename}
+}
+cpu_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/cpuinfo" >> ${filename}
+	cleanstyle
+	cat "/proc/cpuinfo" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/loadavg" >> ${filename}
+	cleanstyle
+	cat "/proc/loadavg" >> ${filename}
+}
+syslog_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+	
+	begin_config "${filename}" "log"
+	echo "# /var/log/warn" >> ${filename}
+	cleanstyle
+	cat "/var/log/warn" >> ${filename}
+
+	begin_config "${filename}" "log"
+	echo "# /var/log/messages" >> ${filename}
+	cleanstyle
+	cat "/var/log/messages" >> ${filename}
+
+	begin_config "${filename}" "log"
+	echo "# /var/log/localmessages" >> ${filename}
+	cleanstyle
+	cat "/var/log/localmessages" >> ${filename}
+}
+memory_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/meminfo" >> ${filename}
+	cleanstyle
+	cat "/proc/meminfo" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# free -k" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 free -k >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/vmstat" >> ${filename}
+	cleanstyle
+	cat "/proc/vmstat" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# sysctl" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 sysctl -a|grep ^vm >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/buddyinfo" >> ${filename}
+	cleanstyle
+	cat "/proc/buddyinfo" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/slabinfo" >> ${filename}
+	cleanstyle
+	cat "/proc/slabinfo" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# numactl --hardware" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 numactl --hardware >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# numastat" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 numastat >> ${filename}
+}
+dstat_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# dstat 1 30" >> ${filename}
+	cleanstyle
+	maxprocesstime 35 dstat 1 30 >> ${filename}
+}
+security_tingwei ()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "log"
+	echo "# /var/log/hitvrkhunter.log" >> ${filename}
+	cleanstyle
+	cat "/var/log/hitvrkhunter.log" >> ${filename}
+
+
+	begin_config "${filename}" "log"
+	echo "# /var/log/hitvchkrootkit.log" >> ${filename}
+	cleanstyle
+	cat "/var/log/hitvchkrootkit.log" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# unhide-linux proc brute" >> ${filename}
+	cleanstyle
+	maxprocesstime 15 unhide-linux proc brute >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# unhide-tcp -f -l" >> ${filename}
+	cleanstyle
+	maxprocesstime 15 unhide-tcp -f -l >> ${filename}
+}
+network_tingwei()
+{
+	filename="${1}"
+	touch ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/sys/net/ipv4/ip_local_port_range" >> ${filename}
+	cleanstyle
+	cat "/proc/sys/net/ipv4/ip_local_port_range" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/sys/net/ipv4/tcp_keepalive_time" >> ${filename}
+	cleanstyle
+	cat "/proc/sys/net/ipv4/tcp_keepalive_time" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/sys/net/ipv4/tcp_keepalive_intvl" >> ${filename}
+	cleanstyle
+	cat "/proc/sys/net/ipv4/tcp_keepalive_intvl" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# /proc/sys/net/ipv4/tcp_keepalive_probes" >> ${filename}
+	cleanstyle
+	cat "/proc/sys/net/ipv4/tcp_keepalive_probes" >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# netstat -anp" >> ${filename}
+	cleanstyle
+	maxprocesstime 10 netstat -anp >> ${filename}
+	
+	begin_config "${filename}" "cmd"
+	echo "#netstat -s" >> ${filename}
+	cleanstyle
+	maxprocesstime 4 netstat -s >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "#tc -s qdisc" >> ${filename}
+	cleanstyle
+	maxprocesstime 4 tc -s qdisc >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "#ss -anio" >> ${filename}
+	cleanstyle
+	maxprocesstime 15 ss -anio >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# ifconfig -a" >> ${filename}
+	cleanstyle
+	maxprocesstime 3 ifconfig -a >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# ip route" >> ${filename}
+	cleanstyle
+	maxprocesstime 2 ip route >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# ip neigh" >> ${filename}
+	cleanstyle
+	maxprocesstime 5 ip neigh >> ${filename}
+
+	begin_config "${filename}" "cmd"
+	echo "# firewall" >> ${filename}
+	cleanstyle
+	maxprocesstime 4 iptables -nvL >> ${filename}
+	echo "" >>${filename}
+	#FIXME: next lines maybe insmod nf_conntrack, with nf_conntrack_max=65535
+	#iptables -t mangle -nvL >> ${filename}
+	#echo "" >>${filename}
+	#iptables -t nat -nvL >> ${filename}
+	#echo "" >> ${filename}
+
+	begin_config "${filename}" "config"
+	echo "# DNS" >> ${filename}
+	cleanstyle
+	cat "/etc/resolv.conf" >> ${filename}
+}
+main()
+{
+	hostname=`hostname`
+	date=`date +%Y%m%d_%H%M_%Z`
+	dir="${hostname}_$date"
+	mkdir "/var/log/${dir}"
+	olddir=`pwd`
+	redcolor
+	echo "============================================================================"
+	echo ""
+	echo "	script version ${script_version}"
+	echo "	script date ${script_date}"
+	echo ""
+	echo "============================================================================"
+	cleanstyle
+	echo "Gathering system information..."
+	greencolor
+	echo "	Data directory /var/log/${dir}"
+
+
+
+
+
+	cleanstyle
+	echo "		Gathering boot information..."
+	boot_tingwei "/var/log/${dir}/boot.txt"  2>>/var/log/${dir}/boot.txt
+	cleanstyle
+	echo "		done!"
+	cleanstyle
+
+	echo "		Gathering network information..."
+	network_tingwei "/var/log/${dir}/network.txt" 2>>/var/log/${dir}/network.txt
+	cleanstyle
+	echo "		done!"
+	
+	cleanstyle
+	echo "		Gathering memory information..."
+	memory_tingwei "/var/log/${dir}/memory.txt" 2>>/var/log/${dir}/memory.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering cpu information..."
+	cpu_tingwei "/var/log/${dir}/cpu.txt" 2>>/var/log/${dir}/cpu.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering disk information..."
+	disk_tingwei "/var/log/${dir}/disk.txt"  2>>/var/log/${dir}/disk.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering process information..."
+	process_tingwei "/var/log/${dir}/process.txt"  2>>/var/log/${dir}/process.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering cron information..."
+	cron_tingwei "/var/log/${dir}/cron.txt" 2>>/var/log/${dir}/cron.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering env information..."
+	env_tingwei "/var/log/${dir}/env.txt"  2>>/var/log/${dir}/env.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering syslog information..."
+	syslog_tingwei "/var/log/${dir}/syslog.txt"  2>>/var/log/${dir}/syslog.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering openfile information..."
+	openfile_tingwei "/var/log/${dir}/openfile.txt"  2>>/var/log/${dir}/openfile.txt
+	cleanstyle
+	echo "		done!"
+
+	cleanstyle
+	echo "		Gathering Security information..."
+	security_tingwei "/var/log/${dir}/security.txt"  2>>/var/log/${dir}/security.txt
+	cleanstyle
+	echo "		done!"	
+
+	cleanstyle
+	echo "		Gathering 30 seconds IO stat..."
+	dstat_tingwei "/var/log/${dir}/dstat.txt" 2>>/var/log/${dir}/dstat.txt
+	cleanstyle
+	echo "		done!" 
+
+
+
+
+
+	cleanstyle
+	cd /var/log
+	echo "		Creating Tar Ball..." 
+	tar jcf ${dir}.tar.bz2 ${dir}
+	rm -rf /var/log/${dir}
+	size=`du -sh /var/log/${dir}.tar.bz2 | awk '{print $1}'`
+	redcolor
+	echo "==[ALL DONE]================================================================"
+	echo -n "Log file tar ball:	"
+	greencolor
+	echo  "/var/log/${dir}.tar.bz2"
+	redcolor
+	echo "Log file size:	${size}"
+	echo ""
+	cleanstyle
+	echo "Please attach the log file tar ball to Hitv BSS developer by email. Thanks!"
+	redcolor
+	echo "============================================================================"
+	cleanstyle
+	cd $olddir
+}
+clear
+main

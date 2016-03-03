@@ -1,0 +1,32 @@
+#!/bin/sh
+error()
+{
+	echo "$1 error!"
+	exit 2
+}
+
+if [ $# -ne 1 ];then
+	echo "Usage: $0 program"
+	exit 1
+fi
+
+
+prog=$1
+objcopy --only-keep-debug ${prog} ${prog}.debug
+if [ $? -ne 0 ];then
+	error "keep-debug"
+fi
+
+objcopy --strip-debug ${prog}
+if [ $? -ne 0 ];then
+	error "strip-debug"
+fi
+
+objcopy --add-gnu-debuglink=${prog}.debug ${prog}
+if [ $? -ne 0 ];then
+	error "add-debuglink"
+fi
+echo ""
+echo "program \"${prog}\" with debuginfo \"${prog}.debug\" done!"
+echo ""
+echo "\"Put the debuginfo file on the same directory with program\" OR  \"gdb -e program -s debuginfo\""

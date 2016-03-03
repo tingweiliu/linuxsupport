@@ -1,0 +1,14 @@
+#!/bin/sh
+
+uptime=`cat /proc/uptime|awk '{print $1}'|awk -F '.' '{print $1}'`
+now=`date +%s`
+
+starttime=$(($now-$uptime))
+echo "System power on `date +"%F %T %Z" -d @${starttime}`"
+
+#param is seconds from dmesg
+if [ $# -eq 1 ];then
+	echo ""
+	dmesgtime=$(($starttime+$1))
+	echo "\"$1\" means `date +"%F %T %Z" -d @${dmesgtime}`"
+fi

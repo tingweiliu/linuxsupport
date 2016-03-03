@@ -1,0 +1,54 @@
+
+<<copyright
+/*******************************************************************************
+  
+  Copyright(c) 2008-2013 
+
+  This program is free software; you can redistribute it and/or modify it
+  under the terms and conditions of the GNU General Public License,
+  version 2, as published by the Free Software Foundation.
+
+  This program is distributed in the hope it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+  more details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc.,
+  51 Franklin St - Fifth Floor, Boston, MA 02110-1301 USA.
+
+  The full GNU General Public License is included in this distribution in
+  the file called "COPYING".
+
+  Version:  0.1
+
+  Date: 2013-10-22 08:32:23 CST
+
+  Contact Information:
+  Tony <tingw.liu@gmail.com>
+  11, Jiangxi Road, Qingdao, China. 
+*******************************************************************************/
+copyright
+
+
+#!/bin/sh
+
+if [ $# -lt 2 ];then
+	echo "Usage: $0 pid seconds [freq]"
+	exit -1
+fi
+pid="$1"
+seconds="$2"
+freq=1000
+if [ $# -eq 3 ];then
+	freq="$3"
+fi
+if [ "$pid" -eq 0 ];then
+	perf record -a -g -o /tmp/perf.data -F "$freq" sleep "$seconds"
+else
+	perf record -a -g -o /tmp/perf.data -p "$pid" -F "$freq" sleep "$seconds"
+fi
+perf script -i /tmp/perf.data > /tmp/perf.unfold
+perl /usr/local/bin/stackcollapse-perf.pl /tmp/perf.unfold > /tmp/perf.folded
+perl /usr/local/bin/flamegraph.pl /tmp/perf.folded > /tmp/perf.svg
+echo "Function execute sampling to /tmp/perf.svg, use chrome explorer to open it!"

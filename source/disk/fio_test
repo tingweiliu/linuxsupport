@@ -1,0 +1,13 @@
+[Sequential-read-test]
+rw=read
+bs=2m
+size=100G
+directory=/usr/local/fountain/data
+numjobs=1
+
+#[random-read-test]
+#rw=randread
+#bs=2m
+#size=100G
+#directory=/usr/local/fountain/data
+#numjobs=1

@@ -1,0 +1,44 @@
+#!/bin/sh
+#/*******************************************************************************
+<<comment   
+  FIXME:This file is a part of hitvsupport package. Used for benchmark!
+  Copyright(c) 2008-2013 Hisense Media Networks Holding Limited, All rights
+  reserved.
+
+  Version: 0.1
+
+  Date: 2013-02-27 18:19:43 CST
+
+  Contact Information:
+  Tony <tingw.liu@gmail.com> <liutingwei@hisense.com>
+  Hisense Co.,Ltd 11,Jiangxi Road,Qingdao,China TEl: +86532-80876897 
+*******************************************************************************/
+comment
+#
+
+rootkit()
+{
+	#FIXME:supportutil will gathering /var/log/hitvrkhunter.log file!
+	rkhunter --check --nocolors -l /var/log/hitvrkhunter.log --skip-keypress --quiet
+
+	#FIXME:supportutil will gathering /var/log/hitvchkrootkit.log file!
+	date >> /var/log/hitvchkrootkit.log
+	nowdir=`pwd`
+	cd /usr/local/bin/chkrootkit-0.49
+	./chkrootkit -n >> /var/log/hitvchkrootkit.log
+	cd $nowdir
+	
+}
+rootkithelp()
+{
+	echo "Usage: rootkitcheck run"
+	exit 0
+}
+case $1 in
+        run)
+		rootkit
+                ;;
+        *)
+		rootkithelp
+                ;;
+esac

@@ -1,0 +1,53 @@
+#!/bin/sh
+#/*******************************************************************************
+<<comment   
+  FIXME:This file is a part of hitvsupport package. Used for benchmark!
+  Copyright(c) 2008-2013 Hisense Media Networks Holding Limited, All rights
+  reserved.
+
+  Version: 0.1
+
+  Date: 2013-02-27 14:21:00 CST
+
+  Contact Information:
+  Tony <tingw.liu@gmail.com> <liutingwei@hisense.com>
+  Hisense Co.,Ltd 11,Jiangxi Road,Qingdao,China TEl: +86532-80876897 
+*******************************************************************************/
+comment
+#
+
+benchmarkrun()
+{
+	nowdir=`pwd`
+	cd /usr/local/bin/lmbench3
+	make results
+	cd $nowdir
+}
+
+benchmarksee()
+{
+	nowdir=`pwd`
+	cd /usr/local/bin/lmbench3
+	make see
+	cd $nowdir
+}
+benchmarkhelp()
+{
+	echo "benchmark is used to calculate the system performance"
+	echo "Usage: 
+		benchmark run   #Begin to calculate the performance
+		benchmark see	#Check the result"
+	exit
+}
+
+case $1 in
+        run)
+		benchmarkrun
+                ;;
+        see)
+		benchmarksee
+                ;;
+        *)
+		benchmarkhelp
+                ;;
+esac

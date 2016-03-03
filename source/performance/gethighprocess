@@ -1,0 +1,32 @@
+#!/bin/sh
+#
+#	Copyright (C) 2012-2012 Hisense Media Networks Holding Limited
+#
+#	2013-03-11 09:58:09 CST
+#	Version: 0.1
+#
+#	Author:
+#		Tony <liutingwei@hisense.com> <tingw.liu@gmail.com>
+#
+#
+param=$#
+prog=$0
+ntype=$1
+line=0
+help()
+{
+	echo "Usage: $0 mem/cpu N"
+	echo "	Display the mem/cpu utilization rate of highest N processes"
+	exit 0
+}
+if [ $param -ne 2  -o  "$ntype" != "mem" -a "$ntype" != "cpu" ];then
+	help
+fi
+if [ "$ntype" = "mem" ];then
+	line=4
+else
+	line=3
+fi
+
+ps aux|head -n 1
+ps aux|grep -v PID|sort -n -r -k $line|head -n $2
